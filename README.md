@@ -2,7 +2,7 @@
 
 DynamoDB helper for [Parallel Scan](http://docs.aws.amazon.com/amazondynamodb/latest/developerguide/QueryAndScan.html#QueryAndScanParallelScan)
 
-Forked from [https://github.com/clearbit/go-ddb](clearbit/go-ddb), remove expvar scanner.CompletedSegments stuff because it causes problems when deployed as an aws lambda.  Also removed the checkpoint stuff because it's too much for what we need.
+Forked from [clearbit/go-ddb](https://github.com/clearbit/go-ddb), remove expvar scanner.CompletedSegments stuff because it causes problems when deployed as an aws lambda.  Also removed the checkpoint stuff because it's too much for what we need.
 
 ## Installation
 
