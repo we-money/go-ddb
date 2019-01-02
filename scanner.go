@@ -1,7 +1,6 @@
 package ddb
 
 import (
-	"expvar"
 	"fmt"
 	"sync"
 	"time"
@@ -16,9 +15,8 @@ func NewScanner(config Config) *Scanner {
 	config.setDefaults()
 
 	return &Scanner{
-		waitGroup:         &sync.WaitGroup{},
-		Config:            config,
-		CompletedSegments: expvar.NewInt("scanner.CompletedSegments"),
+		waitGroup: &sync.WaitGroup{},
+		Config:    config,
 	}
 }
 
@@ -26,7 +24,6 @@ func NewScanner(config Config) *Scanner {
 type Scanner struct {
 	waitGroup *sync.WaitGroup
 	Config
-	CompletedSegments *expvar.Int
 }
 
 // Start uses the handler function to process items for each of the total shard
@@ -47,9 +44,6 @@ func (s *Scanner) handlerLoop(handler Handler, segment int) {
 	defer s.waitGroup.Done()
 
 	var lastEvaluatedKey map[string]*dynamodb.AttributeValue
-	if s.Checkpoint != nil {
-		lastEvaluatedKey = s.Checkpoint.Get(segment)
-	}
 
 	bk := &backoff.Backoff{
 		Max:    5 * time.Minute,
@@ -84,14 +78,10 @@ func (s *Scanner) handlerLoop(handler Handler, segment int) {
 
 		// exit if last evaluated key empty
 		if resp.LastEvaluatedKey == nil {
-			s.CompletedSegments.Add(1)
 			break
 		}
 
 		// set last evaluated key
 		lastEvaluatedKey = resp.LastEvaluatedKey
-		if s.Checkpoint != nil {
-			s.Checkpoint.Set(segment, lastEvaluatedKey)
-		}
 	}
 }

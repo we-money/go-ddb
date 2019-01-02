@@ -9,8 +9,8 @@ import (
 )
 
 const (
-	defaultAwsRegion     = "us-west-1"
-	defaultTotalSegments = 50
+	defaultAwsRegion     = "us-east-1"
+	defaultTotalSegments = 5
 )
 
 // Config is wrapper around the configuration variables
@@ -32,16 +32,6 @@ type Config struct {
 
 	// TotalSegments determines the global amount of concurrency this will use
 	TotalSegments int
-
-	// Checkpoint
-	Checkpoint *Checkpoint
-
-	// CheckpointTableName is the name of checkpont table
-	CheckpointTableName string
-
-	// CheckpointNamespace is the unique namespace for checkpoints. This must be unique so
-	// checkpoints so differnt scripts can maintain their own checkpoints.
-	CheckpointNamespace string
 
 	// Limit is the number of records to return during scan
 	Limit int64
@@ -74,13 +64,5 @@ func (c *Config) setDefaults() {
 			session.New(),
 			aws.NewConfig().WithRegion(c.AwsRegion),
 		)
-	}
-
-	if c.CheckpointTableName != "" && c.CheckpointNamespace != "" {
-		c.Checkpoint = &Checkpoint{
-			TableName: c.CheckpointTableName,
-			Namespace: c.CheckpointNamespace,
-			Svc:       c.Svc,
-		}
 	}
 }
