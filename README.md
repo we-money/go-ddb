@@ -1,11 +1,13 @@
 # ddb
 
-A collection of DynamoDB helpers written in Golang to assit with reading and writing data.
+DynamoDB helper for [Parallel Scan](http://docs.aws.amazon.com/amazondynamodb/latest/developerguide/QueryAndScan.html#QueryAndScanParallelScan)
+
+Forked from [clearbit/go-ddb](clearbit/go-ddb), remove expvar scanner.CompletedSegments stuff because it causes problems when deployed as an aws lambda.  Also removed the checkpoint stuff because it's too much for what we need.
 
 ## Installation
 
 ```
-go get github.com/clearbit/go-ddb
+go get github.com/MikeAlbertFleetSolutions/go-ddb
 ```
 
 ## Parallel Scan
@@ -37,17 +39,6 @@ scanner.Start(ddb.HandlerFunc(func(items ddb.Items) {
 
 // wait for all scans to complete
 scanner.Wait()
-```
-
-Leverage a checkpoint table to store the last evaluated key of a scan:
-
-```go
-scanner := ddb.NewScanner(ddb.Config{
-    TableName:           "ddb-table-name",
-    CheckpointTableName: "checkpoint-production",  // name of table to store last evaluated keys
-    CheckpointNamespace: "my-sample-app",          // namespace to avoid collisions with other scripts
-    TotalSegments:       150,
-})
 ```
 
 ## License
