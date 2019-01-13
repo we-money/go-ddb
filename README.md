@@ -2,7 +2,15 @@
 
 DynamoDB helper for [Parallel Scan](http://docs.aws.amazon.com/amazondynamodb/latest/developerguide/QueryAndScan.html#QueryAndScanParallelScan)
 
-Forked from [clearbit/go-ddb](https://github.com/clearbit/go-ddb), remove expvar scanner.CompletedSegments stuff because it causes problems when deployed as an aws lambda.  Also removed the checkpoint stuff because it's too much for what we need.
+Forked from [clearbit/go-ddb](https://github.com/clearbit/go-ddb)
+
+## Changes from original implementation
+
+* Remove expvar scanner.CompletedSegments stuff because it causes problems when deployed as an AWS Lambda
+
+* Removed the checkpoint stuff because it's too much for what we need
+
+* Significant changes to where & how concurrency is handled, Scanner.Start now returns error from handler and no Scanner.Wait is required
 
 ## Installation
 
@@ -29,16 +37,19 @@ scanner := ddb.NewScanner(ddb.Config{
 })
 
 // start parallel scan w/ handler func
-scanner.Start(ddb.HandlerFunc(func(items ddb.Items) {
+err := scanner.Start(ddb.HandlerFunc(func(items ddb.Items) (error) {
     for _, item := range items {
         var msg message
         dynamodbattribute.UnmarshalMap(item, &msg)
         fmt.Println(msg.Name)
     }
+    return nil
 }))
 
-// wait for all scans to complete
-scanner.Wait()
+if err != null {
+  fmt.Printf("%+v\n", err)
+}
+
 ```
 
 ## License

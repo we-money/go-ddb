@@ -15,34 +15,52 @@ func NewScanner(config Config) *Scanner {
 	config.setDefaults()
 
 	return &Scanner{
-		waitGroup: &sync.WaitGroup{},
-		Config:    config,
+		Config: config,
 	}
 }
 
 // Scanner is
 type Scanner struct {
-	waitGroup *sync.WaitGroup
 	Config
 }
 
 // Start uses the handler function to process items for each of the total shard
-func (s *Scanner) Start(handler Handler) {
+func (s *Scanner) Start(handler Handler) error {
+	var wg sync.WaitGroup
+	errored := make(chan error, 1)
+	finished := make(chan bool, 1)
+
 	for i := 0; i < s.SegmentCount; i++ {
-		s.waitGroup.Add(1)
 		segment := (s.SegmentCount * s.SegmentOffset) + i
-		go s.handlerLoop(handler, segment)
+
+		wg.Add(1)
+		go func(scan *Scanner, hand Handler, seg int) {
+			defer wg.Done()
+
+			err := scan.handlerLoop(hand, seg)
+			if err != nil {
+				errored <- err
+			}
+		}(s, handler, segment)
 	}
+
+	//	wait to be done
+	go func() {
+		wg.Wait()
+		close(finished)
+	}()
+
+	//	handle any errors
+	select {
+	case <-finished:
+	case goerr := <-errored:
+		return goerr
+	}
+
+	return nil
 }
 
-// Wait pauses program until waitgroup is fulfilled
-func (s *Scanner) Wait() {
-	s.waitGroup.Wait()
-}
-
-func (s *Scanner) handlerLoop(handler Handler, segment int) {
-	defer s.waitGroup.Done()
-
+func (s *Scanner) handlerLoop(handler Handler, segment int) (err error) {
 	var lastEvaluatedKey map[string]*dynamodb.AttributeValue
 
 	bk := &backoff.Backoff{
@@ -65,7 +83,8 @@ func (s *Scanner) handlerLoop(handler Handler, segment int) {
 		}
 
 		// scan, sleep if rate limited
-		resp, err := s.Svc.Scan(params)
+		var resp *dynamodb.ScanOutput
+		resp, err = s.Svc.Scan(params)
 		if err != nil {
 			fmt.Println(err)
 			time.Sleep(bk.Duration())
@@ -74,7 +93,10 @@ func (s *Scanner) handlerLoop(handler Handler, segment int) {
 		bk.Reset()
 
 		// call the handler function with items
-		handler.HandleItems(resp.Items)
+		err = handler.HandleItems(resp.Items)
+		if err != nil {
+			return
+		}
 
 		// exit if last evaluated key empty
 		if resp.LastEvaluatedKey == nil {
@@ -84,4 +106,6 @@ func (s *Scanner) handlerLoop(handler Handler, segment int) {
 		// set last evaluated key
 		lastEvaluatedKey = resp.LastEvaluatedKey
 	}
+
+	return
 }
