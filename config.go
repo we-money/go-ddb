@@ -35,6 +35,9 @@ type Config struct {
 
 	// Limit is the number of records to return during scan
 	Limit int64
+
+	// Index name
+	IndexName string
 }
 
 // defaults for configuration.

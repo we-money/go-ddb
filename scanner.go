@@ -77,6 +77,10 @@ func (s *Scanner) handlerLoop(handler Handler, segment int) (err error) {
 			Limit:         aws.Int64(s.Config.Limit),
 		}
 
+		if len(s.IndexName) > 0 {
+			params.IndexName = aws.String(s.IndexName)
+		}
+
 		// last evaluated key
 		if lastEvaluatedKey != nil {
 			params.ExclusiveStartKey = lastEvaluatedKey
