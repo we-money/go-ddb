@@ -1,4 +1,4 @@
-module we-money/do-ddb
+module github.com/we-money/do-ddb
 
 go 1.13
 
